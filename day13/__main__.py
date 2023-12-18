@@ -5,7 +5,9 @@ import sys
 
 sys.path.append('..')
 
+# fmt: off
 import utils
+# fmt: on
 
 DATA_DIR = utils.get_data_dir(__file__)
 
@@ -15,7 +17,7 @@ def main():
     args = parser.parse_args()
     data = read_data(DATA_DIR / args.input_file)
 
-    res = do_challenge(data)
+    res = do_challenge2(data)
     print(f"The value is: {res}")
 
 
@@ -36,6 +38,31 @@ class Map:
             return (i) * 100
         else:
             return find_reflection(self.col_wise)
+
+    def reflection_score_smuged(self):
+        for y, row in enumerate(self.row_wise):
+            old_row = row
+            for x, symbol in enumerate(old_row):
+                old_col = self.col_wise[x]
+                self.col_wise[x] = old_col[:y] + clean_smduge(symbol) + old_col[y+1:]
+                self.row_wise[y] = old_row[:x] + clean_smduge(symbol) + old_row[x+1:]
+
+                if i := reflects_on_line(self.row_wise, y):
+                    return (i) * 100
+                elif i := reflects_on_line(self.col_wise, x):
+                    return i
+                else:
+                    pass
+                self.col_wise[x] = old_col
+                self.row_wise[y] = old_row
+
+
+def clean_smduge(symbol: str):
+    match symbol:
+        case '#':
+            return '.'
+        case '.':
+            return '#'
 
 
 def transpose(data: typing.List[str]) -> typing.List[str]:
@@ -61,6 +88,22 @@ def find_reflection(data: typing.List[str]) -> typing.Optional[int]:
             return i
 
 
+def reflects_on_line(data: typing.List[str], linenum: int) -> typing.Optional[int]:
+    for i in range(1, len(data)):
+        if i > len(data)//2:
+            right = data[i:]
+            left = data[i-len(right):i]
+        else:
+            left = data[:i]
+            right = data[i:i+len(left)]
+        if linenum < i and i-len(right) > linenum:
+            continue
+        if linenum > i and i+len(right) - 1 < linenum:
+            continue
+        if list(reversed(right)) == left:
+            return i
+
+
 def do_challenge(data: typing.List[str]) -> int:
     rows = []
     maps = []
@@ -81,7 +124,22 @@ def do_challenge(data: typing.List[str]) -> int:
 
 
 def do_challenge2(data: typing.List[str]) -> int:
-    pass
+    rows = []
+    maps = []
+    for row in data:
+        if row:
+            rows.append(row)
+        else:
+            maps.append(Map(rows))
+            rows = []
+
+    print(len(maps))
+
+    scores = []
+    for m in maps:
+        scores.append(m.reflection_score_smuged())
+    print(scores)
+    return sum(scores)
 
 
 if __name__ == "__main__":
